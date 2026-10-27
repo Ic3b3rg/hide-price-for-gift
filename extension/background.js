@@ -1,40 +1,17 @@
-import { normalizeProduct, safeImageUrl } from './lib/catalog.js';
+import { normalizeProduct } from './lib/catalog.js';
+import { createThumbnail } from './lib/thumbnail.js';
 
-let writes = Promise.resolve();
-const serialize = (task) => {
-  const result = writes.then(task);
-  writes = result.catch(() => {});
+const MAX_ITEMS = 150;
+let writeQueue = Promise.resolve();
+
+function serializeWrite(task) {
+  const result = writeQueue.then(task);
+  // A failed save must not prevent the next queued operation from running.
+  writeQueue = result.catch(() => {});
   return result;
-};
-
-async function thumbnail(value) {
-  const url = safeImageUrl(value);
-  if (!url) return '';
-  try {
-    const response = await fetch(url, { credentials: 'omit', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(6000) });
-    if (!response.ok || !response.headers.get('content-type')?.startsWith('image/')) return '';
-    const blob = await response.blob();
-    if (blob.size > 8_000_000) return '';
-    const bitmap = await createImageBitmap(blob);
-    const ratio = Math.min(1, 320 / Math.max(bitmap.width, bitmap.height));
-    const canvas = new OffscreenCanvas(Math.max(1, Math.round(bitmap.width * ratio)), Math.max(1, Math.round(bitmap.height * ratio)));
-    const context = canvas.getContext('2d');
-    context.fillStyle = '#ffffff';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-    bitmap.close();
-    const result = await canvas.convertToBlob({ type: 'image/jpeg', quality: 0.76 });
-    const bytes = new Uint8Array(await result.arrayBuffer());
-    if (bytes.length > 45_000) return '';
-    let binary = '';
-    for (const byte of bytes) binary += String.fromCharCode(byte);
-    return `data:image/jpeg;base64,${btoa(binary)}`;
-  } catch {
-    return '';
-  }
 }
 
-async function handle(message) {
+async function handleCommand(message) {
   if (message.type === 'SET_ENABLED') {
     await chrome.storage.local.set({ enabled: Boolean(message.enabled) });
     await updateBadge(Boolean(message.enabled));
@@ -48,9 +25,10 @@ async function handle(message) {
   if (message.type === 'SAVE_PRODUCT') {
     const product = normalizeProduct(message.product);
     if (items.some((item) => item.url === product.url)) return { duplicate: true };
-    if (items.length >= 150) throw new Error('La lista contiene già 150 idee. Esportala e rimuovi qualche prodotto.');
-    const imageData = await thumbnail(product.imageUrl);
-    await chrome.storage.local.set({ items: [{ ...product, imageData, savedAt: new Date().toISOString() }, ...items] });
+    if (items.length >= MAX_ITEMS) throw new Error(`La lista contiene già ${MAX_ITEMS} idee. Esportala e rimuovi qualche prodotto.`);
+    const imageData = await createThumbnail(product.imageUrl);
+    const savedProduct = { ...product, imageData, savedAt: new Date().toISOString() };
+    await chrome.storage.local.set({ items: [savedProduct, ...items] });
     return { imageSaved: Boolean(imageData) };
   }
   throw new Error('Operazione non riconosciuta.');
@@ -65,7 +43,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Mutating operations are restricted to our popup/collection, never merchant pages.
   if (sender.id !== chrome.runtime.id || !sender.url?.startsWith(chrome.runtime.getURL(''))) return;
   // The switch must respond immediately, even while a photo is downloading.
-  const result = message.type === 'SET_ENABLED' ? handle(message) : serialize(() => handle(message));
+  const result = message.type === 'SET_ENABLED'
+    ? handleCommand(message)
+    : serializeWrite(() => handleCommand(message));
   result.then(
     (result) => sendResponse({ ok: true, ...result }),
     (error) => sendResponse({ ok: false, error: error.message || 'Impossibile salvare. Riprova.' }),
@@ -73,11 +53,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
-chrome.runtime.onInstalled.addListener(async () => {
+async function restoreBadge() {
   const { enabled } = await chrome.storage.local.get({ enabled: true });
   await updateBadge(enabled);
-});
-chrome.runtime.onStartup.addListener(async () => {
-  const { enabled } = await chrome.storage.local.get({ enabled: true });
-  await updateBadge(enabled);
-});
+}
+
+chrome.runtime.onInstalled.addListener(restoreBadge);
+chrome.runtime.onStartup.addListener(restoreBadge);
