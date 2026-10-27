@@ -1,0 +1,7 @@
+node_modules/
+dist/
+test-results/
+artifacts/
+playwright-report/
+.DS_Store
+.impeccable/

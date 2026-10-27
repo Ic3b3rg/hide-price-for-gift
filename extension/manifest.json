@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Sorpresa — regali senza prezzi",
+  "version": "1.0.0",
+  "description": "Nasconde i prezzi dei prodotti su Amazon.it e Zalando.it. Raccogli idee con foto e link, ed esportale in PDF o CSV.",
+  "minimum_chrome_version": "120",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://*.amazon.it/*",
+    "https://*.zalando.it/*",
+    "https://*.media-amazon.com/*",
+    "https://*.ssl-images-amazon.com/*",
+    "https://*.ztat.net/*"
+  ],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_popup": "popup/popup.html", "default_title": "Sorpresa" },
+  "icons": { "16": "icons/16.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "content_scripts": [{
+    "matches": ["https://*.amazon.it/*", "https://*.zalando.it/*"],
+    "css": ["content/guard.css"],
+    "js": ["content/guard.js", "content/product.js"],
+    "run_at": "document_start",
+    "all_frames": true
+  }],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'; img-src 'self' data: https://*.media-amazon.com https://*.ssl-images-amazon.com https://*.ztat.net; connect-src https://*.media-amazon.com https://*.ssl-images-amazon.com https://*.ztat.net"
+  }
+}

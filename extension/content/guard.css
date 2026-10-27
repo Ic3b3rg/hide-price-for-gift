@@ -1,0 +1,31 @@
+/* These rules load before the page can paint, including on full navigation. */
+html:not([data-sorpresa="off"]) :is(
+  .a-price, .a-text-price, .priceToPay, .sc-product-price,
+  [id^="priceblock_"],
+  [data-a-selector="price"], [itemprop="price"],
+  [data-testid="product-price"],
+  [data-testid="price"], [data-sorpresa-price]
+):not([data-sorpresa-preserve]):not(:where(
+  #sc-subtotal-amount-activecart, #sc-subtotal-amount-activecart *,
+  #sc-subtotal-amount-buybox, #sc-subtotal-amount-buybox *,
+  #subtotals-marketplace-table, #subtotals-marketplace-table *,
+  [data-testid*="subtotal"], [data-testid*="subtotal"] *,
+  [data-testid*="shipping"], [data-testid*="shipping"] *,
+  [data-testid*="delivery"], [data-testid*="delivery"] *,
+  [id*="shipping" i], [id*="shipping" i] *,
+  [id*="delivery" i], [id*="delivery" i] *,
+  [data-testid*="order-total"], [data-testid*="order-total"] *
+)) {
+  visibility: hidden !important;
+}
+
+/* Mask mixed text without rewriting the text nodes owned by the shop's UI. */
+html:not([data-sorpresa="off"]) ::highlight(sorpresa-prices) {
+  color: transparent !important;
+  text-shadow: none !important;
+}
+
+html:not([data-sorpresa="off"]) [data-sorpresa-text]::selection {
+  color: transparent !important;
+  text-shadow: none !important;
+}

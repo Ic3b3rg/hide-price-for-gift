@@ -1,0 +1,40 @@
+.collection { max-width: 1040px; margin: 0 auto; padding: 48px 40px 24px; }
+.collection-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-bottom: 30px; border-bottom: 1px solid var(--line); }
+.collection-header h1 { font-size: 36px; margin-top: 5px; }
+.export-actions { display: flex; gap: 10px; flex-shrink: 0; }
+.collection-intro { display: flex; align-items: start; justify-content: space-between; gap: 30px; margin: 26px 0 30px; }
+.summary { font-size: 16px; }
+.print-help { font-size: 12px; color: var(--muted); max-width: 310px; }
+.collection-grid { display: grid; grid-template-columns: 1fr 1fr; margin: 0; padding: 0; gap: 0 32px; list-style: none; }
+.idea-card { padding: 24px 0; display: flex; gap: 18px; border-top: 1px solid var(--line); min-width: 0; break-inside: avoid; }
+.idea-card > img { width: 126px; height: 154px; flex-shrink: 0; object-fit: contain; background: white; border-radius: 5px; }
+.idea-info { min-width: 0; }
+.idea-info h2 { font-size: 15px; line-height: 1.5; margin: 7px 0; font-weight: 600; }
+.idea-info h2 a { text-decoration: none; }
+.idea-info h2 a:hover { text-decoration: underline; }
+.product-url { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; display: block; }
+.remove-idea { margin-top: 10px; }
+.collection-footer { border-top: 1px solid var(--line); margin-top: 36px; padding-top: 18px; font-size: 12px; color: var(--muted); }
+.collection-empty { padding: 30px 0; max-width: 500px; color: var(--muted); }
+.collection .status { padding-left: 0; }
+@media (max-width: 760px) {
+  .collection { padding: 28px 22px; }
+  .collection-header, .collection-intro { flex-direction: column; align-items: start; }
+  .collection-grid { grid-template-columns: 1fr; }
+  .collection-intro { gap: 12px; }
+}
+@page { size: A4; margin: 16mm; }
+@media print {
+  :root { background: white; color: black; font-size: 11pt; }
+  .collection { max-width: none; padding: 0; }
+  .export-actions, .print-help, .remove-idea, .status { display: none !important; }
+  .collection-header { padding-bottom: 18px; }
+  .collection-header h1 { font-size: 28px; }
+  .collection-intro { margin: 18px 0; }
+  .collection-grid { display: block; }
+  .idea-card { padding: 18px 0; break-inside: avoid; page-break-inside: avoid; }
+  .idea-card > img { width: 100px; height: 118px; }
+  .idea-info h2 { font-size: 12pt; }
+  .product-url { font-size: 8pt; }
+  .collection-footer { margin-top: 20px; }
+}

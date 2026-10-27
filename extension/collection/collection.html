@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Le mie idee regalo — Sorpresa</title>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="collection.css">
+  </head>
+  <body class="collection">
+    <header class="collection-header">
+      <div class="brand"><img src="../icons/48.png" width="42" height="42" alt=""><div><h1>Le tue idee<span class="brand-dot">.</span></h1><p>Il tuo taccuino dei regali</p></div></div>
+      <div class="export-actions"><button id="export-csv" class="button secondary" disabled>CSV per Excel</button><button id="print" class="button primary" disabled>Salva come PDF</button></div>
+    </header>
+    <main>
+      <div class="collection-intro"><p id="summary" class="summary">Caricamento della lista…</p><p class="print-help">Per il PDF scegli «Salva come PDF» nella finestra di stampa.<br>Le immagini e i link sono inclusi; i prezzi no.</p></div>
+      <p id="empty" class="collection-empty" hidden>La tua lista è ancora vuota. Apri un prodotto su Amazon.it o Zalando.it e salvalo dall’estensione.</p>
+      <ul id="collection-items" class="collection-grid" aria-label="Idee regalo salvate"></ul>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </main>
+    <footer class="collection-footer">Sorpresa · Foto, idee e piccoli segreti.</footer>
+    <script type="module" src="collection.js"></script>
+  </body>
+</html>

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sorpresa</title>
+    <link rel="stylesheet" href="../styles.css">
+  </head>
+  <body class="popup">
+    <header class="brand">
+      <img src="../icons/48.png" width="38" height="38" alt="">
+      <div><h1>Sorpresa<span class="brand-dot">.</span></h1><p>Il regalo resta un segreto.</p></div>
+    </header>
+
+    <main>
+      <section class="mode-panel" aria-labelledby="mode-label">
+        <div><h2 id="mode-label">Modalità regalo</h2><p id="mode-description">Caricamento…</p></div>
+        <label class="switch">
+          <input id="enabled" type="checkbox" role="switch" aria-labelledby="mode-label" aria-describedby="mode-description" disabled>
+          <span class="switch-track" aria-hidden="true"></span>
+        </label>
+      </section>
+      <p class="scope">Amazon.it e Zalando.it · Solo prezzi dei prodotti</p>
+
+      <section class="capture" aria-label="Salva un’idea">
+        <div id="current-product" class="current-product" hidden></div>
+        <button id="save-product" class="button primary" disabled>Salva questo prodotto</button>
+        <p id="page-hint" class="hint">Apro la pagina del prodotto…</p>
+      </section>
+
+      <section class="saved" aria-labelledby="saved-heading">
+        <div class="section-heading"><h2 id="saved-heading">Le tue idee <span id="count" class="count">0</span></h2><button id="open-list" class="text-button">Apri lista ↗</button></div>
+        <div id="empty" class="empty"><p>Il prossimo regalo comincia qui.</p><span>Apri un prodotto e salva foto e link nella tua lista.</span></div>
+        <ul id="items" class="product-list" aria-label="Idee salvate"></ul>
+      </section>
+    </main>
+
+    <footer class="popup-footer">
+      <button id="export-pdf" class="button secondary" disabled>Esporta PDF</button>
+      <button id="export-csv" class="button secondary" disabled>CSV per Excel</button>
+      <p>La lista resta su questo computer.</p>
+    </footer>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
