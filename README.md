@@ -26,6 +26,8 @@ Solo i prezzi dei prodotti, inclusi prezzi precedenti e prezzi unitari. **Spediz
 
 Le regole CSS partono prima del rendering; un osservatore controlla gli aggiornamenti del DOM, inclusi caricamento progressivo e navigazione senza ricaricamento. La pagina non viene riscritta: foto, titoli e pulsanti restano utilizzabili e i prezzi originali vengono ripristinati disattivando la modalità.
 
+La copertura include **le pagine di dettaglio**: prezzo principale, prezzi delle varianti e altre offerte. Sono controllate anche le barre fisse e le finestre montate fuori dal contenuto principale della scheda prodotto, come il menu delle taglie di Zalando.
+
 Quando prezzo e consegna condividono lo stesso nodo di testo, l’estensione maschera soltanto i caratteri dell’importo tramite la funzione nativa CSS Custom Highlight di Chrome, preservando il resto della riga.
 
 Supporto limitato alle versioni italiane HTTPS dei due negozi. I prezzi incorporati in immagini o video non sono riconosciuti. Un cambiamento futuro dei siti può richiedere un aggiornamento delle regole: il rilevamento generico degli importi riduce la dipendenza dalle classi dei negozi, ma non costituisce una garanzia assoluta per qualsiasi pagina futura.
@@ -45,9 +47,9 @@ npm run package
 
 `test:browser` carica realmente l’estensione in un profilo Chromium temporaneo, con pagine locali controllate servite sugli indirizzi dei negozi. Verifica prezzi suddivisi in più elementi, scorrimento, mutazioni, navigazione, sincronizzazione fra schede, salvataggio, duplicati, foto offline, CSV, stampa PDF e rimozione. Le fixture non chiamano le API dei negozi. Le pagine reali sono controllate separatamente; la suite ripetibile non dipende da disponibilità dei siti o CAPTCHA.
 
-`npm run test:live` apre quattro pagine reali (ricerca e prodotto per ogni negozio) in un profilo Chromium temporaneo, controlla i prezzi e salva due prodotti con le foto. Produce schermate, un PDF offline e un rapporto in `artifacts/verification/`. Questo controllo richiede rete e può fallire se un negozio blocca il browser di automazione; utilizza lo user agent desktop della versione Chromium installata. Non effettua accessi, aggiunte al carrello o acquisti.
+`npm run test:live` apre cinque pagine reali (risultati di ricerca e tre schede prodotto) in un profilo Chromium temporaneo, controlla i prezzi e salva tre prodotti con le foto. Verifica anche il menu delle taglie di Zalando. Produce schermate, un PDF offline e un rapporto in `artifacts/verification/`. Questo controllo richiede rete e può fallire se un negozio blocca il browser di automazione; utilizza lo user agent desktop della versione Chromium installata. Non effettua accessi, aggiunte al carrello o acquisti.
 
-`npm run package` genera `dist/sorpresa/` e `dist/sorpresa-1.0.0.zip` (richiede l’utilità `zip`). Lo ZIP contiene solo l’estensione installabile.
+`npm run package` genera `dist/sorpresa/` e `dist/sorpresa-1.0.1.zip` (richiede l’utilità `zip`). Lo ZIP contiene solo l’estensione installabile.
 
 ```text
 extension/
@@ -63,4 +65,4 @@ scripts/              Controllo sintassi e pacchetto ZIP
 
 Riferimenti ufficiali: [content script e document_start](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts), [archiviazione locale](https://developer.chrome.com/docs/extensions/reference/api/storage), [test delle estensioni con Playwright](https://playwright.dev/docs/chrome-extensions).
 
-Verifica del 27 ottobre 2026: 4 test unitari e 7 scenari nel browser superati; controllate quattro pagine reali dei negozi, con salvataggio di due foto reali ed esportazione PDF offline. La revisione ha verificato anche righe miste prezzo/consegna, percentuali e aggiornamenti dei prezzi in più passaggi.
+Verifica del 27 ottobre 2026: 4 test unitari e 9 scenari nel browser superati; controllate cinque pagine reali, inclusi tre dettagli prodotto e il cambio taglia su due prodotti Zalando. Coperti anche finestre laterali, righe miste prezzo/consegna, percentuali e aggiornamenti dei prezzi in più passaggi.

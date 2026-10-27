@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Sorpresa — regali senza prezzi",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Nasconde i prezzi dei prodotti su Amazon.it e Zalando.it. Raccogli idee con foto e link, ed esportale in PDF o CSV.",
   "minimum_chrome_version": "120",
   "permissions": ["storage"],

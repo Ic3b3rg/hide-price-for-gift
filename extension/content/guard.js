@@ -28,7 +28,12 @@
   }
 
   function inProduct(element) {
-    return Boolean(element.closest(PRODUCT)) || (/\.html$/.test(location.pathname) && Boolean(element.closest('main')));
+    const detailPage = /(^|\.)amazon\.it$/.test(location.hostname)
+      ? /\/(?:dp|gp\/product)\/[a-z0-9]{10}(?:\/|$)/i.test(location.pathname)
+      : /^\/[\w-]+-[\w]+-[\w]+\.html$/.test(location.pathname);
+    // Detail-page prices also occur in sticky bars and dialogs mounted outside
+    // main/#dp. Shipping and order totals still pass through excluded().
+    return Boolean(element.closest(PRODUCT)) || (detailPage && Boolean(element.closest('body')));
   }
 
   function markText(node) {

@@ -220,3 +220,43 @@ test('mixed price lines keep delivery text and all percentage discounts visible'
   await page.locator('#visual-reference span').evaluate((span) => { span.style.color = 'transparent'; });
   expect((await page.locator('#mixed-line').screenshot()).equals(await page.locator('#visual-reference').screenshot())).toBe(true);
 });
+
+for (const [shop, url] of [
+  ['Amazon', 'https://www.amazon.it/dp/B0DHS9Y433'],
+  ['Zalando', 'https://www.zalando.it/new-balance-sneakers-basse-beige-beige-ne242a0o4-b11.html'],
+]) {
+  test(`${shop} product detail: sticky prices, variants and offers outside the main content`, async ({ context, extensionId }) => {
+    const page = await context.newPage();
+    await page.goto(url);
+    await expect(page.locator('#product-price')).toBeHidden();
+    await page.evaluate(() => {
+      const floating = document.createElement('div');
+      floating.id = 'detail-floating';
+      floating.innerHTML = `<div><span id="sticky-price">112,54 €</span><button id="sticky-buy">Aggiungi</button></div>
+        <div role="dialog"><p>Altre offerte <span id="other-offer">99,99 €</span></p>
+          <button id="variant-button">Taglia 42 <span id="variant-price">119,95 €</span></button>
+          <p>Spedizione <span id="floating-shipping">4,99 €</span></p>
+          <p>Totale ordine <span id="floating-total">124,94 €</span></p>
+          <p>Sconto <span id="floating-discount">-15%</span></p></div>`;
+      document.body.append(floating);
+    });
+    await expect.soft(page.locator('#sticky-price')).toBeHidden();
+    await expect.soft(page.locator('#other-offer')).toBeHidden();
+    await expect.soft(page.locator('#variant-price')).toBeHidden();
+    await expect(page.locator('#sticky-buy')).toBeVisible();
+    await expect(page.locator('#variant-button')).toBeVisible();
+    await expect(page.locator('#floating-shipping')).toBeVisible();
+    await expect(page.locator('#floating-total')).toBeVisible();
+    await expect(page.locator('#floating-discount')).toBeVisible();
+    await page.evaluate(() => { document.querySelector('#variant-price').firstChild.data = '129,95 €'; });
+    await expect.soft(page.locator('#variant-price')).toBeHidden();
+    const popup = await context.newPage();
+    await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+    await popup.getByRole('switch').uncheck();
+    await expect(page.locator('#sticky-price')).toBeVisible();
+    await expect(page.locator('#variant-price')).toBeVisible();
+    await popup.getByRole('switch').check();
+    await expect.soft(page.locator('#sticky-price')).toBeHidden();
+    await expect.soft(page.locator('#variant-price')).toBeHidden();
+  });
+}

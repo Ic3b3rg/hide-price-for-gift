@@ -27,6 +27,7 @@ try {
     ['amazon-product', 'https://www.amazon.it/dp/B0DHS9Y433'],
     ['zalando-search', 'https://www.zalando.it/catalogo/?q=sneakers'],
     ['zalando-product', 'https://www.zalando.it/nike-sportswear-air-force-1-07-sneakers-basse-white-ni112n022-a11.html'],
+    ['zalando-newbalance-product', 'https://www.zalando.it/new-balance-sneakers-basse-beige-beige-ne242a0o4-b11.html'],
   ];
   for (const [name, url] of cases.filter(([name]) => !process.argv[2] || name.startsWith(process.argv[2]))) {
     console.log(`Controllo pagina reale: ${name}`);
@@ -39,27 +40,25 @@ try {
       throw error;
     }
     await page.screenshot({ path: resolve(output, `${name}.png`) });
-    const result = await page.evaluate(() => {
-      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-      const visible = [];
-      const masks = [...(CSS.highlights.get('sorpresa-prices') || [])];
-      while (walker.nextNode()) {
-        const node = walker.currentNode;
-        const element = node.parentElement;
-        if (!/(?:€|EUR)\s*\d|\d[\d.,\s]*\s*(?:€|EUR)/i.test(node.textContent) || element.closest('script,style,nav,footer')) continue;
-        if (!element.getClientRects().length || getComputedStyle(element).visibility !== 'visible') continue;
-        const amounts = [...node.textContent.matchAll(/(?:€|EUR)\s*\d[\d.,\s]*|\d[\d.,\s]*\s*(?:€|EUR)/gi)];
-        if (amounts.length && amounts.every((amount) => masks.some((range) => range.startContainer === node && range.endContainer === node && range.startOffset <= amount.index && range.endOffset >= amount.index + amount[0].trimEnd().length))) continue;
-        if (!element.closest('[data-asin],article,#dp') && !(location.hostname.includes('zalando') && location.pathname.endsWith('.html') && element.closest('main'))) continue;
-        const label = (element.closest('p') || element.parentElement).textContent;
-        if (/spedizion|consegna|shipping|delivery|total|ordini|orders/i.test(label)) continue;
-        visible.push({ text: node.textContent.trim().slice(0, 100), html: element.outerHTML.slice(0, 600), context: element.parentElement.outerHTML.slice(0, 1000) });
-      }
-      return { title: document.title, hidden: document.querySelectorAll('[data-sorpresa-price],.a-price').length, visibleProductAmounts: visible };
-    });
+    const result = await page.evaluate(inspectPagePrices);
     console.log(JSON.stringify(result));
     assert.equal(result.visibleProductAmounts.length, 0, `${name}: importi prodotto ancora visibili`);
     report.push({ name, url, ...result });
+    if (name.startsWith('zalando') && name.endsWith('product')) {
+      await page.locator('[data-testid="pdp-size-picker-trigger"]').click({ timeout: 8000 });
+      await page.getByRole('listbox').waitFor({ state: 'visible', timeout: 5000 });
+      const sizes = await page.evaluate(inspectPagePrices);
+      assert.equal(sizes.visibleProductAmounts.length, 0, `${name}: prezzi delle taglie ancora visibili`);
+      await page.screenshot({ path: resolve(output, `${name}-sizes.png`) });
+      const option = page.locator('[role="listbox"] input[name="size-picker"]:not([disabled])').first();
+      const optionId = await option.getAttribute('id');
+      await page.locator(`[role="listbox"] label[for="${optionId}"]`).click();
+      await page.getByRole('listbox').waitFor({ state: 'hidden', timeout: 5000 });
+      const selected = await page.evaluate(inspectPagePrices);
+      assert.equal(selected.visibleProductAmounts.length, 0, `${name}: prezzo visibile dopo il cambio taglia`);
+      report.at(-1).sizesChecked = true;
+      console.log(`${name}: prezzi nascosti nel menu e dopo il cambio taglia`);
+    }
     if (name.endsWith('product')) {
       const saved = await control.evaluate(async (url) => {
         const tabs = await chrome.tabs.query({});
@@ -98,4 +97,24 @@ try {
   console.log(`Verifica reale completata; schermate e PDF in ${output}`);
 } finally {
   await context.close();
+}
+
+function inspectPagePrices() {
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const visible = [];
+  const masks = [...(CSS.highlights.get('sorpresa-prices') || [])];
+  const detailPage = /\/(?:dp|gp\/product)\/[a-z0-9]{10}(?:\/|$)/i.test(location.pathname) || /^\/[\w-]+-[\w]+-[\w]+\.html$/.test(location.pathname);
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    const element = node.parentElement;
+    if (!/(?:€|EUR)\s*\d|\d[\d.,\s]*\s*(?:€|EUR)/i.test(node.textContent) || element.closest('script,style,nav,footer')) continue;
+    if (!element.getClientRects().length || getComputedStyle(element).visibility !== 'visible') continue;
+    const amounts = [...node.textContent.matchAll(/(?:€|EUR)\s*\d[\d.,\s]*|\d[\d.,\s]*\s*(?:€|EUR)/gi)];
+    if (amounts.length && amounts.every((amount) => masks.some((range) => range.startContainer === node && range.endContainer === node && range.startOffset <= amount.index && range.endOffset >= amount.index + amount[0].trimEnd().length))) continue;
+    if (!detailPage && !element.closest('[data-asin],article,#dp')) continue;
+    const label = (element.closest('p') || element.parentElement).textContent;
+    if (/spedizion|consegna|shipping|delivery|total|ordini|orders/i.test(label)) continue;
+    visible.push({ text: node.textContent.trim().slice(0, 100), html: element.outerHTML.slice(0, 600), context: element.parentElement.outerHTML.slice(0, 1000) });
+  }
+  return { title: document.title, hidden: document.querySelectorAll('[data-sorpresa-price],.a-price').length, visibleProductAmounts: visible };
 }
