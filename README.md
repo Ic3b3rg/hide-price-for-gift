@@ -130,4 +130,4 @@ tests/                    Test unitari e scenari nel browser
 
 Le regole CSS vengono caricate a `document_start`; un `MutationObserver` aggiorna le maschere prima del rendering quando cambia il DOM. Nei nodi con prezzo e altri testi, CSS Custom Highlight nasconde solo i caratteri dell’importo, senza riscrivere il contenuto del negozio.
 
-Riferimenti: [content script di Chrome](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts), [archiviazione locale](https://developer.chrome.com/docs/extensions/reference/api/storage), [test delle estensioni con Playwright](https://playwright.dev/docs/chrome-extensions). I requisiti concordati sono in [PRODUCT.md](PRODUCT.md).
+Riferimenti: [content script di Chrome](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts), [archiviazione locale](https://developer.chrome.com/docs/extensions/reference/api/storage), [test delle estensioni con Playwright](https://playwright.dev/docs/chrome-extensions). I requisiti concordati sono in [PRODUCT.md](https://github.com/Ic3b3rg/hide-price-for-gift/blob/master/PRODUCT.md).
