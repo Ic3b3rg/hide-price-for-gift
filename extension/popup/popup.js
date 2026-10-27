@@ -1,4 +1,4 @@
-import { canonicalProductUrl, toCsv } from '../lib/catalog.js';
+import { canonicalProductUrl } from '../lib/catalog.js';
 import { command, productImage, productLink, downloadCsv } from '../lib/ui.js';
 
 const $ = (selector) => document.querySelector(selector);
@@ -6,7 +6,7 @@ let items = [];
 let currentProduct = null;
 let saving = false;
 
-function status(message, error = false) {
+function showStatus(message, error = false) {
   $('#status').textContent = message;
   $('#status').classList.toggle('is-error', error);
 }
@@ -19,9 +19,39 @@ function renderMode(enabled) {
 }
 
 function updateSaveButton() {
-  const saved = currentProduct && items.some((item) => item.url === currentProduct.url);
-  $('#save-product').disabled = !currentProduct || saved || saving;
-  $('#save-product').textContent = saving ? 'Salvataggio…' : saved ? 'Già nella tua lista ✓' : 'Salva questo prodotto';
+  const isSaved = currentProduct && items.some((item) => item.url === currentProduct.url);
+  const button = $('#save-product');
+  button.disabled = !currentProduct || isSaved || saving;
+  if (saving) button.textContent = 'Salvataggio…';
+  else if (isSaved) button.textContent = 'Già nella tua lista ✓';
+  else button.textContent = 'Salva questo prodotto';
+}
+
+function createProductRow(item) {
+  const row = document.createElement('li');
+  row.className = 'product-row';
+  const info = document.createElement('div');
+  info.className = 'product-info';
+  const store = document.createElement('span');
+  store.className = 'store';
+  store.textContent = item.store;
+  info.append(store, productLink(item));
+  const remove = document.createElement('button');
+  remove.className = 'remove-button';
+  remove.textContent = '×';
+  remove.setAttribute('aria-label', `Rimuovi ${item.title}`);
+  remove.addEventListener('click', async () => {
+    remove.disabled = true;
+    try {
+      await command('REMOVE_PRODUCT', { url: item.url });
+      showStatus('Idea rimossa dalla lista.');
+    } catch (error) {
+      remove.disabled = false;
+      showStatus(error.message, true);
+    }
+  });
+  row.append(productImage(item), info, remove);
+  return row;
 }
 
 function renderItems() {
@@ -29,32 +59,7 @@ function renderItems() {
   $('#empty').hidden = items.length > 0;
   $('#export-pdf').disabled = !items.length;
   $('#export-csv').disabled = !items.length;
-  $('#items').replaceChildren(...items.map((item) => {
-    const row = document.createElement('li');
-    row.className = 'product-row';
-    const info = document.createElement('div');
-    info.className = 'product-info';
-    const store = document.createElement('span');
-    store.className = 'store';
-    store.textContent = item.store;
-    info.append(store, productLink(item));
-    const remove = document.createElement('button');
-    remove.className = 'remove-button';
-    remove.textContent = '×';
-    remove.setAttribute('aria-label', `Rimuovi ${item.title}`);
-    remove.addEventListener('click', async () => {
-      remove.disabled = true;
-      try {
-        await command('REMOVE_PRODUCT', { url: item.url });
-        status('Idea rimossa dalla lista.');
-      } catch (error) {
-        remove.disabled = false;
-        status(error.message, true);
-      }
-    });
-    row.append(productImage(item), info, remove);
-    return row;
-  }));
+  $('#items').replaceChildren(...items.map(createProductRow));
   updateSaveButton();
 }
 
@@ -81,16 +86,24 @@ async function loadCurrentProduct() {
   }
 }
 
+async function openList() {
+  try {
+    await chrome.tabs.create({ url: chrome.runtime.getURL('collection/collection.html') });
+  } catch (error) {
+    showStatus(error.message, true);
+  }
+}
+
 $('#enabled').addEventListener('change', async (event) => {
   const value = event.target.checked;
   event.target.disabled = true;
   try {
     await command('SET_ENABLED', { enabled: value });
     renderMode(value);
-    status(value ? 'Modalità regalo attiva in tutte le schede dei due negozi.' : 'I prezzi sono di nuovo visibili.');
+    showStatus(value ? 'Modalità regalo attiva in tutte le schede dei due negozi.' : 'I prezzi sono di nuovo visibili.');
   } catch (error) {
     renderMode(!value);
-    status(error.message, true);
+    showStatus(error.message, true);
   }
 });
 
@@ -98,29 +111,23 @@ $('#save-product').addEventListener('click', async () => {
   if (!currentProduct || saving) return;
   saving = true;
   updateSaveButton();
-  status('Salvo il prodotto e la sua foto…');
+  showStatus('Salvo il prodotto e la sua foto…');
   try {
     const result = await command('SAVE_PRODUCT', { product: currentProduct });
-    status(result.duplicate ? 'Questo prodotto è già nella lista.' : result.imageSaved ? 'Idea salvata, con la foto disponibile anche offline.' : 'Idea salvata. Non è stato possibile scaricare la foto: resta il link all’immagine.');
+    if (result.duplicate) showStatus('Questo prodotto è già nella lista.');
+    else if (result.imageSaved) showStatus('Idea salvata, con la foto disponibile anche offline.');
+    else showStatus('Idea salvata. Non è stato possibile scaricare la foto: resta il link all’immagine.');
   } catch (error) {
-    status(error.message, true);
+    showStatus(error.message, true);
   } finally {
     saving = false;
     updateSaveButton();
   }
 });
 
-async function openList() {
-  try {
-    await chrome.tabs.create({ url: chrome.runtime.getURL('collection/collection.html') });
-  } catch (error) {
-    status(error.message, true);
-  }
-}
-
 $('#open-list').addEventListener('click', openList);
 $('#export-pdf').addEventListener('click', openList);
-$('#export-csv').addEventListener('click', () => downloadCsv(items, toCsv));
+$('#export-csv').addEventListener('click', () => downloadCsv(items));
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
   if (changes.items) {
@@ -137,5 +144,5 @@ try {
   renderItems();
   await loadCurrentProduct();
 } catch (error) {
-  status(`Impossibile leggere la lista: ${error.message}`, true);
+  showStatus(`Impossibile leggere la lista: ${error.message}`, true);
 }

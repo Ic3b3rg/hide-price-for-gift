@@ -1,3 +1,5 @@
+import { toCsv } from './catalog.js';
+
 export async function command(type, data = {}) {
   const response = await chrome.runtime.sendMessage({ type, ...data });
   if (!response?.ok) throw new Error(response?.error || 'Operazione non riuscita. Riprova.');
@@ -25,7 +27,7 @@ export function productLink(item) {
   return link;
 }
 
-export function downloadCsv(items, toCsv) {
+export function downloadCsv(items) {
   const blob = new Blob([toCsv(items)], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
